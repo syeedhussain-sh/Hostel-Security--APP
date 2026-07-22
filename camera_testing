@@ -1,0 +1,204 @@
+import cv2
+import time
+from datetime import datetime
+from ultralytics import YOLO
+from alert_system import generate_alert
+
+# Load YOLO model
+model = YOLO("yolov8n.pt")
+
+# Open Webcam
+cap = cv2.VideoCapture(0)
+
+# Restricted Area
+RX1, RY1 = 150, 100
+RX2, RY2 = 500, 400
+
+# Intruder Line
+LINE_Y = 250
+
+# Loitering
+loiter_start_time = None
+LOITER_TIME = 10
+
+# Alert Logging
+last_alert = {}
+
+def log_alert(alert_name):
+    global last_alert
+
+    current_time = datetime.now().strftime("%H:%M:%S")
+
+    if alert_name not in last_alert:
+        last_alert[alert_name] = 0
+
+    # Print only once every 5 seconds
+    if time.time() - last_alert[alert_name] > 5:
+        print(f"[{current_time}] {alert_name}")
+        last_alert[alert_name] = time.time()
+
+while True:
+
+    success, frame = cap.read()
+
+    if not success:
+        break
+
+    results = model(frame)
+
+    annotated_frame = results[0].plot()
+
+    # Restricted Area
+    cv2.rectangle(
+        annotated_frame,
+        (RX1, RY1),
+        (RX2, RY2),
+        (0, 0, 255),
+        3
+    )
+
+    cv2.putText(
+        annotated_frame,
+        "Restricted Area",
+        (RX1, RY1 - 10),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.8,
+        (0, 0, 255),
+        2
+    )
+
+    # Intruder Line
+    cv2.line(
+        annotated_frame,
+        (0, LINE_Y),
+        (640, LINE_Y),
+        (255, 0, 0),
+        3
+    )
+
+    cv2.putText(
+        annotated_frame,
+        "ENTRY LINE",
+        (10, LINE_Y - 10),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.8,
+        (255, 0, 0),
+        2
+    )
+
+    person_count = 0
+    person_in_area = False
+
+    for box in results[0].boxes:
+
+        class_id = int(box.cls[0])
+
+        if class_id == 0:
+
+            person_count += 1
+
+            x1, y1, x2, y2 = map(int, box.xyxy[0])
+
+            cx = (x1 + x2) // 2
+            cy = (y1 + y2) // 2
+
+            # Restricted Area Detection
+            if RX1 < cx < RX2 and RY1 < cy < RY2:
+
+                person_in_area = True
+
+                cv2.putText(
+                    annotated_frame,
+                    "ALERT: RESTRICTED AREA!",
+                    (20, 120),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    1,
+                    (0, 0, 255),
+                    3
+                )
+
+                log_alert("RESTRICTED AREA")
+
+            # Intruder Detection
+            if cy > LINE_Y:
+
+                cv2.putText(
+                    annotated_frame,
+                    "INTRUDER DETECTED!",
+                    (20, 240),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    1,
+                    (0, 0, 255),
+                    3
+                )
+
+                log_alert("INTRUDER DETECTED")
+
+    # Loitering Detection
+    if person_in_area:
+
+        if loiter_start_time is None:
+            loiter_start_time = time.time()
+
+        elapsed = time.time() - loiter_start_time
+
+        cv2.putText(
+            annotated_frame,
+            f"Time: {int(elapsed)} sec",
+            (20, 160),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.8,
+            (255, 255, 0),
+            2
+        )
+
+        if elapsed >= LOITER_TIME:
+
+            cv2.putText(
+                annotated_frame,
+                "LOITERING DETECTED!",
+                (20, 200),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                1,
+                (0, 0, 255),
+                3
+            )
+
+            log_alert("LOITERING DETECTED")
+
+    else:
+        loiter_start_time = None
+
+    # People Count
+    cv2.putText(
+        annotated_frame,
+        f"People Count: {person_count}",
+        (20, 40),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        1,
+        (0, 255, 0),
+        2
+    )
+
+    # Overcrowding Detection
+    if person_count > 5:
+
+        cv2.putText(
+            annotated_frame,
+            "ALERT: OVERCROWDING!",
+            (20, 80),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            1,
+            (0, 0, 255),
+            2
+        )
+
+        log_alert("OVERCROWDING DETECTED")
+
+    cv2.imshow("Hostel Guard AI", annotated_frame)
+
+    if cv2.waitKey(1) & 0xFF == ord("q"):
+        break
+
+cap.release()
+cv2.destroyAllWindows()
