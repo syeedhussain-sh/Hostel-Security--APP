@@ -1,0 +1,13 @@
+from flask import Blueprint, jsonify
+
+dashboard = Blueprint("dashboard", __name__)
+
+@dashboard.route("/dashboard")
+def dashboard_home():
+    data = {
+        "total_cameras": 4,
+        "active_alerts": 2,
+        "today_incidents": 5,
+        "safe_zones": 3
+    }
+    return jsonify(data)
