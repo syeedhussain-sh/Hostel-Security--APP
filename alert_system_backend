@@ -1,0 +1,7 @@
+from flask import Blueprint
+
+alerts = Blueprint("alerts", __name__)
+
+@alerts.route("/alerts")
+def alert_home():
+    return "Alerts API is working"
