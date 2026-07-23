@@ -1,0 +1,70 @@
+import json
+import os
+import time
+from datetime import datetime
+import cv2
+
+
+last_alert = {}
+
+
+def generate_alert(alert_name, frame, confidence, people_count, priority):
+
+    global last_alert
+
+    current_time = time.time()
+
+    if alert_name in last_alert:
+        if current_time - last_alert[alert_name] < 5:
+            return
+
+    last_alert[alert_name] = current_time
+
+
+    if not os.path.exists("alert_images"):
+        os.makedirs("alert_images")
+
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+    image_path = f"alert_images/{alert_name}_{timestamp}.jpg"
+
+
+    cv2.imwrite(image_path, frame)
+
+
+    alert_data = {
+
+        "event": alert_name,
+        "time": datetime.now().strftime("%H:%M:%S"),
+        "confidence": round(confidence,2),
+        "people_count": people_count,
+        "priority": priority,
+        "image": image_path
+
+    }
+
+
+    alerts = []
+
+    if os.path.exists("alerts.json"):
+
+        with open("alerts.json","r") as file:
+
+            try:
+                alerts = json.load(file)
+
+            except:
+                alerts=[]
+
+
+    alerts.append(alert_data)
+
+
+    with open("alerts.json","w") as file:
+
+        json.dump(alerts,file,indent=4)
+
+
+    print("ALERT GENERATED:")
+    print(alert_data)
