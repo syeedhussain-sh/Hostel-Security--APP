@@ -1,0 +1,7 @@
+from flask import Blueprint
+
+camera = Blueprint("camera", __name__)
+
+@camera.route("/camera")
+def camera_home():
+    return "Camera API is working"
