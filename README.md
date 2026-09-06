@@ -94,6 +94,8 @@ Alerts are stored in:
 
 ```text
 alerts.json
+
+
 HostelGuard-AI/
 │
 ├── backend/
@@ -117,3 +119,9 @@ HostelGuard-AI/
 ├── requirements.txt
 ├── README.md
 └── .gitignore
+
+
+
+📌 Project Vision
+HostelGuard AI aims to transform conventional CCTV surveillance into an intelligent security system by combining real-time computer vision with automated event detection and alert generation.
+Instead of relying entirely on manual CCTV monitoring, the system continuously analyzes camera feeds and helps security personnel identify important events more efficiently.
