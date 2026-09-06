@@ -94,3 +94,26 @@ Alerts are stored in:
 
 ```text
 alerts.json
+HostelGuard-AI/
+│
+├── backend/
+│   └── app.py
+│
+├── detection/
+│   ├── person_detection.py
+│   ├── intruder_detection.py
+│   ├── restricted_area.py
+│   ├── loitering_detection.py
+│   └── overcrowding_detection.py
+│
+├── models/
+│   └── yolov8n.pt
+│
+├── alerts/
+│   └── alerts.json
+│
+├── frontend/
+│
+├── requirements.txt
+├── README.md
+└── .gitignore
